@@ -10,5 +10,5 @@ rcalling-production.up.railway.app
 1> pip install fastapi uvicorn websockets
 
 2. Install Heroku CLI
-    heroku login
-    heroku create my-python-backend
+    1.heroku login
+    2.heroku create my-python-backend
