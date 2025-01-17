@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <script>
+        const socket = new WebSocket("wss://rcalling-production.up.railway.app/ws/123");
+
+        socket.onopen = () => {
+            console.log("Connected to WebSocket");
+            socket.send("Hello from the web client!");
+        };
+
+        socket.onmessage = (event) => {
+            console.log("Message from server:", event.data);
+        };
+
+        socket.onclose = () => {
+            console.log("WebSocket connection closed");
+        };
+    </script>
+</body>
+</html>
