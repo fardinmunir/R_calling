@@ -2,12 +2,13 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 app = FastAPI()
 
-# Store connected clients
-connected_clients = {}
-
+# Root endpoint for health checks
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Internet Calling App!"}
+    return {"status": "OK"}
+
+# WebSocket endpoint
+connected_clients = {}
 
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
