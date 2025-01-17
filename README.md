@@ -3,7 +3,7 @@
 git init
 git add .
 git commit -m "Initial commit"
-
+rcalling-production.up.railway.app
 
  Install dependencies
  
@@ -12,5 +12,3 @@ git commit -m "Initial commit"
 2. Install Heroku CLI
     heroku login
     heroku create my-python-backend
-
-
