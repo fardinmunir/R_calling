@@ -3,11 +3,19 @@
 git init
 git add .
 git commit -m "Initial commit"
+
+
 rcalling-production.up.railway.app
+
+Start your FastAPI server locally using
+uvicorn app.main:app --reload
+
 
  Install dependencies
  
 1> pip install fastapi uvicorn websockets
+2>pip install websockets
+
 
 2. Install Heroku CLI
     1.heroku login

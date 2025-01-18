@@ -6,11 +6,11 @@
 <body>
     <h1>WebSocket Test</h1>
     <script>
-        const socket = new WebSocket("wss://rcalling-production.up.railway.app/ws/123");
+        const socket = new WebSocket("ws://127.0.0.1:8000/ws/123");
 
         socket.onopen = () => {
-            console.log("Connected to WebSocket");
-            socket.send("Hello from the web client!");
+            console.log("WebSocket connected");
+            socket.send("Hello from Web!");
         };
 
         socket.onmessage = (event) => {
@@ -18,7 +18,7 @@
         };
 
         socket.onclose = () => {
-            console.log("WebSocket connection closed");
+            console.log("WebSocket disconnected");
         };
     </script>
 </body>
