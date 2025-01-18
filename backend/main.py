@@ -2,11 +2,15 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import Dict, List
+import os
 
 app = FastAPI()
 
 # Serve the frontend folder
-app.mount("/frontend", StaticFiles(directory="../frontend"), name="frontend")
+# app.mount("/frontend", StaticFiles(directory="../frontend"), name="frontend")
+#Absolute path
+frontend_path = os.path.join(os.path.dirname(__file__), "../frontend")
+app.mount("/frontend", StaticFiles(directory=frontend_path), name="frontend")
 
 # Add CORS middleware
 app.add_middleware(
