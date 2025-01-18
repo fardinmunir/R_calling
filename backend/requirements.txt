@@ -1,3 +1,4 @@
 # pip freeze > requirements.txt
 fastapi==0.100.0
 uvicorn==0.23.0
+TA_Lib==0.4.0
