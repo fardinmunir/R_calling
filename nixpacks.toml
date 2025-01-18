@@ -1,0 +1,8 @@
+[phases.setup]
+nixpkgs = ["python310", "build-essential", "libffi", "libssl", "libfreetype", "libpng", "libopenblas", "git"]
+
+[phases.install]
+commands = ["python -m pip install --upgrade pip", "pip install -r requirements.txt"]
+
+[phases.start]
+commands = ["uvicorn backend.main:app --host 0.0.0.0 --port 8000"]
