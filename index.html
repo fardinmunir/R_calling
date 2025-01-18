@@ -1,25 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>WebSocket Test</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>R_Web Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+    }
+    input {
+      padding: 10px;
+      font-size: 16px;
+      width: 300px;
+      margin-right: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+    li {
+      background: #f1f1f1;
+      padding: 10px;
+      margin-bottom: 5px;
+      border-radius: 5px;
+    }
+  </style>
 </head>
 <body>
-    <h1>WebSocket Test</h1>
-    <script>
-        const socket = new WebSocket("ws://127.0.0.1:8000/ws/123");
+  <h1>R_Web Chat</h1>
+  <input id="message" placeholder="Type a message">
+  <button onclick="sendMessage()">Send</button>
+  <ul id="messages"></ul>
+  <script>
+    const ws = new WebSocket("ws://127.0.0.1:8000/ws/123");
 
-        socket.onopen = () => {
-            console.log("WebSocket connected");
-            socket.send("Hello from Web!");
-        };
+    ws.onopen = () => {
+      console.log("Connected to WebSocket server");
+    };
 
-        socket.onmessage = (event) => {
-            console.log("Message from server:", event.data);
-        };
+    ws.onmessage = (event) => {
+      const msg = document.createElement("li");
+      msg.textContent = event.data;
+      document.getElementById("messages").appendChild(msg);
+    };
 
-        socket.onclose = () => {
-            console.log("WebSocket disconnected");
-        };
-    </script>
+    ws.onclose = () => {
+      console.log("Disconnected from WebSocket server");
+    };
+
+    function sendMessage() {
+      const input = document.getElementById("message");
+      if (input.value.trim() !== "") {
+        ws.send(input.value);
+        input.value = "";
+      } else {
+        alert("Message cannot be empty");
+      }
+    }
+  </script>
 </body>
 </html>
