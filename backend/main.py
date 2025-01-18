@@ -1,8 +1,12 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from typing import Dict, List
 
 app = FastAPI()
+
+# Serve the frontend folder
+app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 
 # Add CORS middleware
 app.add_middleware(
@@ -34,19 +38,24 @@ async def room_websocket_endpoint(websocket: WebSocket, room_id: str, user_id: s
             await ws.send_text(f"{user_id} joined the room.")
 
     try:
+        typing_status = False  # Track if the user is typing
         while True:
             data = await websocket.receive_text()
 
-            # Handle typing start/stop events
+            # Handle typing events
             if data == "typing start":
-                for ws in rooms[room_id]:
-                    if ws != websocket:
-                        await ws.send_text(f"{user_id} is typing...")
+                if not typing_status:
+                    for ws in rooms[room_id]:
+                        if ws != websocket:
+                            await ws.send_text(f"{user_id} is typing...")
+                    typing_status = True
                 continue
             elif data == "typing stop":
-                for ws in rooms[room_id]:
-                    if ws != websocket:
-                        await ws.send_text(f"{user_id} stopped typing.")
+                if typing_status:
+                    for ws in rooms[room_id]:
+                        if ws != websocket:
+                            await ws.send_text(f"{user_id} stopped typing.")
+                    typing_status = False
                 continue
 
             # Broadcast the actual message to everyone in the room
