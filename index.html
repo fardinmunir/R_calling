@@ -3,68 +3,148 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>R_Web Chat</title>
+  <title>WebSocket Chat</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
       padding: 0;
     }
-    input {
+    input, button {
       padding: 10px;
       font-size: 16px;
-      width: 300px;
-      margin-right: 10px;
+      margin: 5px;
     }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    ul {
+    #messages {
       list-style-type: none;
       padding: 0;
       margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
     }
     li {
-      background: #f1f1f1;
+      background: #f9f9f9;
       padding: 10px;
       margin-bottom: 5px;
       border-radius: 5px;
     }
+    .typing-indicator {
+      font-style: italic;
+      color: gray;
+    }
   </style>
 </head>
 <body>
-  <h1>R_Web Chat</h1>
-  <input id="message" placeholder="Type a message">
-  <button onclick="sendMessage()">Send</button>
-  <ul id="messages"></ul>
+  <h1>WebSocket Chat</h1>
+
+  <!-- Setup Section -->
+  <div id="setup-section">
+    <label for="room">Room Code:</label>
+    <input id="room" placeholder="Enter room code">
+    <br>
+    <label for="username">Username:</label>
+    <input id="username" placeholder="Enter your username">
+    <br>
+    <button onclick="joinChat()">Join Chat</button>
+  </div>
+
+  <!-- Chat Section -->
+  <div id="chat-section" style="display: none;">
+    <input id="message" placeholder="Type a message">
+    <button onclick="sendMessage()">Send</button>
+    <ul id="messages"></ul>
+  </div>
+
   <script>
-    const ws = new WebSocket("ws://127.0.0.1:8000/ws/123");
+    let ws;
+    let typingTimeout;
+    let isTyping = false;
 
-    ws.onopen = () => {
-      console.log("Connected to WebSocket server");
-    };
+    const setupSection = document.getElementById("setup-section");
+    const chatSection = document.getElementById("chat-section");
+    const roomInput = document.getElementById("room");
+    const usernameInput = document.getElementById("username");
+    const messageInput = document.getElementById("message");
+    const messagesList = document.getElementById("messages");
 
-    ws.onmessage = (event) => {
-      const msg = document.createElement("li");
-      msg.textContent = event.data;
-      document.getElementById("messages").appendChild(msg);
-    };
+    function joinChat() {
+      const room = roomInput.value.trim();
+      const username = usernameInput.value.trim();
 
-    ws.onclose = () => {
-      console.log("Disconnected from WebSocket server");
-    };
+      if (!room) {
+        alert("Please enter a room code.");
+        return;
+      }
+      if (!username) {
+        alert("Please enter your username.");
+        return;
+      }
+
+      // Initialize WebSocket connection
+      ws = new WebSocket(`ws://127.0.0.1:8000/ws/${room}/${username}`);
+
+      ws.onopen = () => {
+        console.log("Connected to WebSocket server");
+        setupSection.style.display = "none";
+        chatSection.style.display = "block";
+      };
+
+      ws.onmessage = (event) => {
+        const msg = document.createElement("li");
+        if (event.data.includes("is typing")) {
+          msg.className = "typing-indicator";
+          const existingIndicator = document.querySelector(
+            `.typing-indicator[data-user="${event.data.split(":")[0]}"]`
+          );
+          if (!existingIndicator) {
+            msg.textContent = event.data;
+            msg.setAttribute("data-user", event.data.split(":")[0]); // Track the user
+            messagesList.appendChild(msg);
+          }
+        } else if (event.data.includes("stopped typing")) {
+          const typingIndicators = document.querySelectorAll(
+            `.typing-indicator[data-user="${event.data.split(":")[0]}"]`
+          );
+          typingIndicators.forEach((indicator) => indicator.remove());
+        } else {
+          msg.textContent = event.data;
+          messagesList.appendChild(msg);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log("Disconnected from WebSocket server");
+        alert("Disconnected from the server. Refresh the page to reconnect.");
+      };
+    }
 
     function sendMessage() {
-      const input = document.getElementById("message");
-      if (input.value.trim() !== "") {
-        ws.send(input.value);
-        input.value = "";
-      } else {
+      const message = messageInput.value.trim();
+      if (!message) {
         alert("Message cannot be empty");
+        return;
       }
+      ws.send(message);
+      messageInput.value = "";
+      ws.send("typing stop"); // Stop typing indicator after sending the message
     }
+
+    // Send "typing start" when user starts typing, with debounce
+    messageInput.addEventListener("input", () => {
+      if (!isTyping) {
+        ws.send("typing start");
+        isTyping = true;
+      }
+
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        ws.send("typing stop");
+        isTyping = false;
+      }, 2000); // Stop typing after 2 seconds of inactivity
+    });
   </script>
 </body>
 </html>

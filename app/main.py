@@ -1,5 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Dict, List
 
 app = FastAPI()
 
@@ -17,26 +18,8 @@ app.add_middleware(
 def read_root():
     return {"status": "OK"}
 
-# Existing WebSocket endpoint (Optional: Keep or replace)
-connected_clients = {}
-
-@app.websocket("/ws/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, user_id: str):
-    await websocket.accept()
-    connected_clients[user_id] = websocket
-    try:
-        while True:
-            data = await websocket.receive_text()
-            print(f"Message from {user_id}: {data}")
-            for client_id, client_ws in connected_clients.items():
-                if client_id != user_id:
-                    await client_ws.send_text(f"Message from {user_id}: {data}")
-    except WebSocketDisconnect:
-        print(f"User {user_id} disconnected")
-        del connected_clients[user_id]
-
-# New WebSocket endpoint for room-based functionality
-rooms = {}
+# Room-based WebSocket functionality
+rooms: Dict[str, List[WebSocket]] = {}
 
 @app.websocket("/ws/{room_id}/{user_id}")
 async def room_websocket_endpoint(websocket: WebSocket, room_id: str, user_id: str):
@@ -44,12 +27,40 @@ async def room_websocket_endpoint(websocket: WebSocket, room_id: str, user_id: s
     if room_id not in rooms:
         rooms[room_id] = []
     rooms[room_id].append(websocket)
+
+    # Notify others in the room about the new connection
+    for ws in rooms[room_id]:
+        if ws != websocket:
+            await ws.send_text(f"{user_id} joined the room.")
+
     try:
         while True:
             data = await websocket.receive_text()
+
+            # Handle typing start/stop events
+            if data == "typing start":
+                for ws in rooms[room_id]:
+                    if ws != websocket:
+                        await ws.send_text(f"{user_id} is typing...")
+                continue
+            elif data == "typing stop":
+                for ws in rooms[room_id]:
+                    if ws != websocket:
+                        await ws.send_text(f"{user_id} stopped typing.")
+                continue
+
+            # Broadcast the actual message to everyone in the room
             print(f"Message from {user_id} in room {room_id}: {data}")
             for ws in rooms[room_id]:
                 await ws.send_text(f"{user_id}: {data}")
     except WebSocketDisconnect:
-        print(f"User {user_id} disconnected from room {room_id}")
         rooms[room_id].remove(websocket)
+        print(f"User {user_id} disconnected from room {room_id}")
+
+        # Notify others in the room about the disconnection
+        for ws in rooms[room_id]:
+            await ws.send_text(f"{user_id} left the room.")
+
+        # Cleanup the room if it's empty
+        if not rooms[room_id]:
+            del rooms[room_id]
