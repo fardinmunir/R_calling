@@ -6,7 +6,7 @@ from typing import Dict, List
 app = FastAPI()
 
 # Serve the frontend folder
-app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
+app.mount("/frontend", StaticFiles(directory="../frontend"), name="frontend")
 
 # Add CORS middleware
 app.add_middleware(
